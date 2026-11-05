@@ -72,11 +72,8 @@ export function configBase() {
     pomodoro: { foco: 25, descanso: 5, largo: 15, cada: 4 },
     calendario: { url: '', clave: '' },
     reglas: [
-      { patron: 'dental|dentista|sonrisas', area: 'agencia', tipo: 'grabacion' },
-      { calendario: 'Shows', patron: 'yipio', area: 'yipio', tipo: 'evento' },
-      { calendario: 'Shows', patron: 'matu', area: 'matu', tipo: 'evento' },
-      { calendario: 'Shows', area: 'standup', tipo: 'show' },
-      { calendario: 'Festivos en Uruguay', tipo: 'feriado' },
+      { calendario: 'Shows', area: 'area1', tipo: 'show' },
+      { calendario: 'Festivos', tipo: 'feriado' },
       { calendario: 'Cumpleaños', tipo: 'cumple' },
     ],
   };

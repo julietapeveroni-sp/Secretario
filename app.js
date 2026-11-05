@@ -9,7 +9,7 @@ const ls = {
   del(k) { try { localStorage.removeItem(k); } catch {} },
   json(k, d = null) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
 };
-const REPO_DEF = 'falsofacu/Secretario-datos';
+const REPO_DEF = 'julietapeveroni-sp/Secretario-datos';
 
 // ───────────────────────── íconos ─────────────────────────
 const I = {
@@ -202,6 +202,7 @@ function vence(s) {
   return { txt: fechaCorta(s), cls: '' };
 }
 const area = (id) => S.estado.areas.find((a) => a.id === id) || { id, nombre: 'Otro', corto: 'Otro', color: 'var(--acento)' };
+const areaShows = () => (S.estado.areas.find((a) => a.shows) || S.estado.areas[0] || { id: '' }).id;
 const nivelHtml = (n, chico = false) => `<span class="nivel n-${n} ${chico ? 'chico' : ''}">${N.NIVELES[n].nombre}</span>`;
 const pct = (x) => Math.round(Math.max(0, Math.min(1, x)) * 100);
 const nombrePieza = (p) => `${p.cuota.nombre}${N.cantidadEn(p.cuota, p.lunes) > 1 ? ` ${p.n}` : ''}${p.titulo ? ` · ${p.titulo}` : ''}`;
@@ -216,7 +217,7 @@ const FRASES = {
   al_dia: ['Vas bien. Un paso a la vez.', 'Todo en orden. Tranqui.', 'Al día y sin apuro.'],
   en_riesgo: ['Se puede. Priorizá lo que vence primero.', 'Un empujoncito hoy y llegás.', 'Foco en lo importante, el resto espera.'],
   atrasado: ['Respirá. Ordenemos y vamos de a una.', 'Hoy no es para todo, es para lo urgente.', 'Hablar con un cliente a tiempo también es trabajar.'],
-  libre: ['Semana despejada. Buen momento para Turrákata.', 'Nada urgente. Elegí algo que te guste.'],
+  libre: ['Semana despejada. Buen momento para avanzar en lo que más te gusta.', 'Nada urgente. Elegí algo que te guste.'],
 };
 const frase = (n) => { const l = FRASES[n] || FRASES.al_dia; return l[new Date().getDate() % l.length]; };
 const CELEBRA = ['¡Bien ahí!', 'Una menos.', 'Así se hace.', 'Vas bárbaro.', 'Excelente.', 'Eso.'];
@@ -256,7 +257,7 @@ function renderTop(A) {
   else if (show) sub += ` Esta noche tenés <b>show</b>${show.hora ? ` a las ${show.hora}` : ''}.`;
   else sub += ` ${frase(A.semana.nivel)}`;
   return `<header class="top">
-    <div><h1>${saludo(A.ahora)}, Facu</h1><p class="sub">${sub}</p></div>
+    <div><h1>${saludo(A.ahora)}, Julieta</h1><p class="sub">${sub}</p></div>
     <div class="acciones">
       <button class="icono" data-a="actualizar" title="Actualizar ahora">${I.refrescar}</button>
       <button class="icono" data-a="tema" title="Tema: ${tema}">${icTema}</button>
@@ -433,7 +434,7 @@ function vistaHoy(A) {
   for (const s of A.showHoy) {
     const items = prepItems(s);
     const hechos = items.filter((i) => i.hecho).length;
-    partes.push(`<div class="banner" style="--c:${area('standup').color}"><span class="emoji">🎤</span><div style="flex:1"><b>Esta noche: ${esc(s.titulo)}</b><span>${[s.hora, s.lugar].filter(Boolean).map(esc).join(' · ') || 'Revisá horario y lugar'} · prep ${hechos}/${items.length}</span></div><button class="btn chico" data-a="tab" data-id="standup">Ver</button></div>`);
+    partes.push(`<div class="banner" style="--c:${area(areaShows()).color}"><span class="emoji">📅</span><div style="flex:1"><b>Esta noche: ${esc(s.titulo)}</b><span>${[s.hora, s.lugar].filter(Boolean).map(esc).join(' · ') || 'Revisá horario y lugar'} · prep ${hechos}/${items.length}</span></div><button class="btn chico" data-a="tab" data-id="${areaShows()}">Ver</button></div>`);
   }
 
   const plan = A.plan.filter((p) => !p.extra);
@@ -516,10 +517,10 @@ function vistaArea(A, a) {
   }).join('');
 
   const extra = [];
-  if (a.id === 'standup') extra.push(cardShows(A));
+  if (a.shows) extra.push(cardShows(A));
   if (a.fechasUrl) extra.push(cardFechasCliente(A, a));
   const evs = A.eventos.filter((e) => e.area === a.id && e.tipo !== 'show' && e.fin >= A.ahora).slice(0, 8);
-  if (evs.length) extra.push(`<div class="card"><div class="cab"><h2>${a.id === 'agencia' ? 'Próximas grabaciones' : 'En el calendario'}</h2></div>${agenda(groupByDay(evs))}</div>`);
+  if (evs.length) extra.push(`<div class="card"><div class="cab"><h2>En el calendario</h2></div>${agenda(groupByDay(evs))}</div>`);
 
   return `<div class="card" style="margin-bottom:14px">
       <div class="cab"><div><h2 style="font-family:var(--fuente-display);font-weight:400;font-size:26px;display:flex;align-items:center;gap:6px">${esc(a.nombre)}<button class="mini" data-a="editar-area" data-id="${a.id}" title="Editar área">${I.lapiz}</button></h2>${a.nota ? `<div class="tenue">${esc(a.nota)}</div>` : ''}${a.excluirMetricas || a.excluirResumen ? `<div class="meta" style="margin-top:6px">${a.excluirMetricas ? '<span class="chip">no suma a las métricas</span>' : ''}${a.excluirResumen ? '<span class="chip">fuera del resumen del día</span>' : ''}</div>` : ''}</div>${nivelHtml(pa.nivel)}</div>
@@ -531,7 +532,7 @@ function vistaArea(A, a) {
         ${cuotas.length ? `<div class="card"><div class="cab"><h2>Cuotas de la semana</h2><span class="tenue">vencen el domingo</span></div>${cuotaHtml}</div>` : ''}
         ${rutinas.length || a.excluirMetricas ? `<div class="card"><div class="cab"><h2>Rutina</h2><button class="btn chico" data-a="nueva-rutina" data-area="${a.id}">${I.mas} Hábito</button></div>
           ${rutinaHtml || '<div class="vacio">Cosas que se repiten ciertos días: ejercicio, lectura… Te aparecen en <i>Hoy</i> el día que tocan.</div>'}</div>` : ''}
-        ${a.id === 'standup' && !cuotas.length ?`<div class="card"><div class="cab"><h2>Metas semanales de stand-up</h2></div><div class="vacio">Opcional. Por ejemplo: escribir material nuevo una vez por semana.</div><button class="btn chico" data-a="nueva-cuota" data-area="standup">${I.mas} Activar una meta semanal</button></div>` : ''}
+        ${a.shows && !cuotas.length ?`<div class="card"><div class="cab"><h2>Metas semanales</h2></div><div class="vacio">Opcional. Por ejemplo: escribir material nuevo una vez por semana.</div><button class="btn chico" data-a="nueva-cuota" data-area="${a.id}">${I.mas} Activar una meta semanal</button></div>` : ''}
         <div class="card"><div class="cab"><h2>Tareas</h2>${rutinas.length || a.excluirMetricas ? '' : `<button class="btn chico" data-a="nueva-rutina" data-area="${a.id}" title="Algo que se repite ciertos días">↻ Que se repite</button>`}</div>
           ${conFecha.map((t) => filaTarea(t)).join('')}
           ${sinFecha.length ? `<div class="etiqueta" style="margin-top:${conFecha.length ? 14 : 0}px">Sin apuro</div>${sinFecha.map((t) => filaTarea(t)).join('')}` : ''}
@@ -627,7 +628,7 @@ function vistaMetas(A) {
     return `<div class="card" style="border-top:3px solid ${a.color}"><div class="cab"><h2>${esc(a.nombre)}</h2><button class="btn chico" data-a="nueva-meta" data-area="${a.id}">${I.mas} Meta</button></div>
       ${ms.length ? ms.map(metaHtml).join('') : '<div class="vacio">Sin metas.</div>'}</div>`;
   }).join('')}</div>
-  <div class="col"><div class="card"><h2>Cómo usar las metas</h2><p class="suave" style="margin:8px 0 0">Son las cosas grandes que no tienen fecha de la semana: lanzar el marketing de Turrákata en EE.UU., ponerle nombre al proyecto con Lu… Partilas en pasos chicos. El próximo paso aparece en el plan de hoy cuando te sobra tiempo, si lo pasás a tarea.</p></div></div></div>`;
+  <div class="col"><div class="card"><h2>Cómo usar las metas</h2><p class="suave" style="margin:8px 0 0">Son las cosas grandes que no tienen fecha de la semana: terminar un curso, lanzar un proyecto, ordenar la casa… Partilas en pasos chicos. El próximo paso aparece en el plan de hoy cuando te sobra tiempo, si lo pasás a tarea.</p></div></div></div>`;
 }
 
 // ───────────────────────── vista: Vida ─────────────────────────
@@ -684,7 +685,7 @@ function menuDia(s, ancla) {
   abrirMenu(ancla, [
     { titulo: fechaLarga(d) },
     { txt: libre ? 'Quitar día libre' : 'Marcar día libre (no trabajo)', on: libre, fn: () => mutar((e) => { e.libres[s] = { off: !libre, u: ahoraMs() }; }, libre ? 'Vuelve a ser día de trabajo' : 'Día libre marcado') },
-    { txt: 'Agregar vencimiento este día…', icono: I.mas, fn: () => hojaTarea(null, S.tab !== 'calendario' ? S.tab : 'gamedev', s) },
+    { txt: 'Agregar vencimiento este día…', icono: I.mas, fn: () => hojaTarea(null, S.tab !== 'calendario' ? S.tab : S.A.areas[0]?.id, s) },
     ...(vencen.length ? ['-', { titulo: 'Vence este día' }, ...vencen.map((t) => ({ txt: `${t.hecha ? '✓ ' : ''}${t.titulo}`, icono: `<i class="pe" style="--p:${t.hecha ? 1 : 0};border-color:${area(t.area).color}"></i>`, fn: () => menuTarea(t.id, ancla) }))] : []),
   ]);
 }
@@ -778,7 +779,7 @@ function hojaPieza(id) {
 
 function hojaTarea(t, areaId, fecha, rutina = false) {
   const nueva = !t;
-  t = t || { id: N.nuevoId('t'), area: S.A.areas.some((a) => a.id === areaId) ? areaId : 'gamedev', titulo: '', fecha: fecha || null, hecha: false };
+  t = t || { id: N.nuevoId('t'), area: S.A.areas.some((a) => a.id === areaId) ? areaId : S.A.areas[0]?.id, titulo: '', fecha: fecha || null, hecha: false };
   const rep = N.esRepetida(t) || rutina;
   const dias = t.repetir?.dias || [];
   abrirHoja(`<h2>${nueva ? (rutina ? 'Nuevo hábito' : 'Nueva tarea') : 'Editar tarea'}</h2>
@@ -853,7 +854,7 @@ function hojaShow(clave) {
     return;
   }
   const items = prepItems(s);
-  abrirHoja(`<div class="etiqueta" style="color:${area('standup').color}">Show · ${fechaLarga(N.parseDia(s.dia))}${s.hora ? ` · ${s.hora}` : ''}</div>
+  abrirHoja(`<div class="etiqueta" style="color:${area(areaShows()).color}">Show · ${fechaLarga(N.parseDia(s.dia))}${s.hora ? ` · ${s.hora}` : ''}</div>
     <h2>${esc(s.titulo)}</h2>${s.lugar ? `<div class="suave">${esc(s.lugar)}</div>` : ''}${s.notas ? `<p class="suave">${esc(s.notas)}</p>` : ''}
     <section><h3>Preparación</h3>
       ${items.map((i) => `<div class="fila ${i.hecho ? 'hecha' : ''}"><button class="chk ${i.hecho ? 'on' : ''}" data-a="prep" data-clave="${esc(clave)}" data-id="${esc(i.id)}">${i.hecho ? I.check : ''}</button><div class="txt"><b>${esc(i.t)}</b></div><button class="mini" data-a="borrar-prep" data-clave="${esc(clave)}" data-id="${esc(i.id)}">${I.basura}</button></div>`).join('')}
